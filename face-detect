@@ -1,0 +1,136 @@
+#!/usr/bin/env python
+
+#-----------------------------------------------------------------------------#
+# PURPOSE: 
+'''
+Identify whether the input image is a face using pre-defined classifier from 
+OpenCV. If it is print yes, and if its not a face print no.
+'''
+# USE: 
+'''
+PC with python and OpenCV installed. 
+Along with haarcascade_frontalface_default.xml
+
+To run the program in cmd/terminal type: ./face-detect folderName/*.jpg
+or ./face-detect image.jpg
+'''
+# PROGRAM: 
+'''
+Face detection using Haar Cascades a method proposed by Paul Viola and Michael
+Jones.
+Takes image input and converts it from RGB (BGR) to grayscale or HSV and is 
+checked using the face classifier XML by OpenCV and if a face structure is 
+found, then the positions are returned, and prints yes, if there is no 
+positions of face found, then the program prints no.
+'''
+#COMPARISON OF vjv.res AND vj.res
+'''
+Z-score  class
+   0.00  no     
+   3.12  yes
+The Z-score above shows result from McNemar test of 200 face images test using
+greyscale and HSV conversion and I got 3.12 yes positive, which indicate the 
+score is above mean for yes mean values. Also because the value is positive it
+means the vjv.res(HSV) out-performed the vj.res(greyscale) conversion of the
+image.
+
+vj.res 
+Test	TP	TN	FP	FN	accuracy  recall  precision  specificity 
+  0		 0	 0	 0	 0	   0.00		0.00	 0.00		0.00
+  200	184	 0	16	 0	   0.92     1.00     0.92		0.00
+  200	184	 0	16	 0	   0.92		1.00	 0.92	 	0.00
+
+For grayscale, Out of 200 test I got true positives of 184 "yes" and 16
+"no" false positives. This means 184 were allocated with accurate label and
+rest 16 images had the features relating to a face, but were assigned "no". 
+For accuracy/precision I got 0.92, which is good but is lower than expected due
+to too many false positives. Recall was 1.00 as there was no false negative, so
+it was TP/TP which is excellent result. Specificity is 0, as there was no false
+negative so 0/16+0. 
+
+vjv.res
+Test	TP	TN	FP	FN	accuracy  recall  precision  specificity 
+  0		 0	 0	 0	 0	   0.00		0.00	 0.00		0.00
+  200	190	 0	10	 0	   0.95     1.00     0.95		0.00
+  200	190	 0	10	 0	   0.95		1.00	 0.95	 	0.00
+
+For HSV, Out of the 200 tests I got true positives of 190 "yes" and 10 "no" 
+false positives. This is better than gray value, as there is a improvement of 6
+more "yes" (true positives). This meant for accuracy/precision I got 0.95,
+which shows using HSV brightness helps to enhance the image better than
+grayscale conversion as there was more true positives. The recall was 1.00,
+same as grayscale as no false negatives. Specificity is 0, as there was no
+false negative so 0/10+0. 
+'''
+#IMPROVEMENTS
+'''
+There is not much improvements to be in evaluation process as the values are useful
+as it is right now, as shown with a high z-score value, though having some
+true negative or false negative would be useful for precision and specificity.
+
+To reduce false positives, the face_cascade.detectMultiScale(), second 
+parameter which is responsible for scaleFactor, which specify how much the
+image size is reduced, could be changed to minor lower or higher value.
+
+Also in HSV conversion, which produced better outcome than original grayscale
+images, I use the Value of HSV associated with brightness and so for 
+improvement, changing the hue or saturation values slightly should improve the
+pixel quality, as it would change the shade and grey level in the images. This
+should also cause some improvement in true positives.
+'''
+# REFERENCES:
+'''
+Majority of checkFaces() function code is from [1], such as gray and faces
+variables and the face classifier XML
+is from [2].
+
+[1] Face Detection using Haar Cascades, Accessed: 27/11/2017,
+    URL: https://docs.opencv.org/3.3.0/d7/d8b/tutorial_py_face_detection.html
+[2] OpenCV GitHub, Accessed: 27/11/2017,
+    URL: https://github.com/opencv/opencv/tree/master/data/haarcascades
+'''
+#-----------------------------------------------------------------------------#
+
+import sys, cv2, numpy
+
+#------------------------------------------------------------------------------
+# Routines.
+#------------------------------------------------------------------------------
+
+#reads pre-trained classifier for face XML by OpenCV. Reference [2]
+face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+
+#Reference [1]
+def checkFaces(im):
+    #A grayscale and HSV conversion of RGB image.
+    gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY) 
+    hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)[:,:,2:]
+    
+    #The converted image is passed into pre-trained classifier to return
+    #positions of detected face .
+    faces = face_cascade.detectMultiScale(hsv, 1.3, 5) 
+
+    #If faces variable is more than 0, then print yes else no
+    if len(faces) > 0:
+        print "yes"
+    else:
+        print "no"
+
+#------------------------------------------------------------------------------
+# Main program.
+#------------------------------------------------------------------------------
+
+# Ensure the command line is sensible.
+if len (sys.argv) < 2:
+    print >>sys.stderr, "Usage:", sys.argv[0], "<image>..."
+    sys.exit (1)
+
+# Process and show the files given on the command line.
+for fn in sys.argv[1:]:
+    # Read image and pass to checkFaces to process
+    img = cv2.imread (fn)
+    checkFaces(img)
+    
+#------------------------------------------------------------------------------
+# END OF face-detect 
+#------------------------------------------------------------------------------
